@@ -7,13 +7,10 @@ block_contr = [
     "XBT",
 ]
 
-__start_date = "10:00:00.000"
-__end_date = "10:00:05.000"
 
-
-def get_sorted_table():
+def __get_table(need_sort=False, sort_column=None):
     with open('./example.csv', newline='') as csvfile:
-        sorted_table = []
+        result = []
         tasks = csv.reader(csvfile, delimiter=';')
         header = False
 
@@ -25,19 +22,21 @@ def get_sorted_table():
             if log_action[2][:3] in block_contr:
                 continue
 
-            sorted_table.append(log_action)
+            result.append(log_action)
 
-        sorted_table.sort(key=lambda x: x[6])
-        sorted_table.insert(0, header)
+        if need_sort:
+            result.sort(key=lambda x: x[sort_column])
 
-    return sorted_table
+        result.insert(0, header)
+
+    return result
 
 
 def calculate_param(start_date, end_date):
     result_contractors = {}
     flag_header = True
 
-    for row in get_sorted_table():
+    for row in __get_table():
         if flag_header:
             flag_header = False
             continue
@@ -45,6 +44,7 @@ def calculate_param(start_date, end_date):
         param = {
             "strategy": row[1],
             "contract": row[2],
+            "time_open": row[5],
             "time_close": row[6],
             "custom": row[11]
         }
@@ -52,7 +52,7 @@ def calculate_param(start_date, end_date):
         if not param["contract"][-1].isdigit():
             continue
 
-        if parse(start_date) <= parse(param["time_close"]) <= parse(end_date):
+        if parse(start_date) <= parse(param["time_open"]) <= parse(end_date):
             # Заведение контракта, если он до этого не встречался
             if not param["contract"] in result_contractors:
                 # Проверка убыток, или прибыль
@@ -89,68 +89,116 @@ def calculate_param(start_date, end_date):
                     else:
                         result_contractors[param["contract"]][param["strategy"]] = [Decimal(param["custom"]) * -1, 0]
 
-        elif parse(end_date) < parse(param["time_close"]):
+        elif parse(end_date) < parse(param["time_open"]):
             return result_contractors
 
+    return result_contractors
 
-contractors = calculate_param(__start_date, __end_date)
-next_contractors = calculate_param(__start_date, "18:00:00.000")
 
-print(f"Шаг 1: {__start_date} по {__end_date}")
-print(f"Шаг 1: {__start_date} по 18:00:00.000")
-print(f"\nКонтрагент\t\tШаг 1\t\t\tШаг 2\n")
+def get_struct_data(*need_time):
+    steps = print_header(need_time)
+    result_dict = {}
+    index = 1
 
-count_negative_5 = 0
-count_positive_5 = 0
+    for step in steps:
+        for contr in step:
+            temp_dict = {}
+            for strategy in step[contr]:
 
-count_negative_18 = 0
-count_positive_18 = 0
+                temp_dict[strategy] = {
+                        f"step_{index}": step[contr][strategy][1] - step[contr][strategy][0]
+                    }
 
-for contractor in contractors.keys():
-    print(f"{contractor}\n", end='')
-    for strategy in contractors[contractor]:
-        # Отображение контрагентов
-        if len(strategy) > 12:
-            print(f"-> {strategy}", end='\t')
-        else:
-            print(f"-> {strategy}", end='\t\t')
+            if contr in result_dict:
+                result_dict[contr] += [temp_dict]
+            else:
+                result_dict[contr] = [temp_dict]
+        index += 1
 
-        total_5 = contractors[contractor][strategy][1] - contractors[contractor][strategy][0]
-        total_18 = next_contractors[contractor][strategy][1] - next_contractors[contractor][strategy][0]
+    return result_dict
 
-        if total_5 < 0:
-            count_negative_5 += 1
-        else:
-            count_positive_5 += 1
 
-        if total_18 < 0:
-            count_negative_18 += 1
-        else:
-            count_positive_18 += 1
-
-        if len(f"{total_5}") == 13:
-            print(f"{total_5}", end='\t')
-        elif len(f"{total_5}") < 8:
-            print(f"{total_5}", end='\t\t\t')
-        else:
-            print(f"{total_5}", end='\t\t')
-
-        print(f"{total_18}")
-
+def print_header(need_time):
+    steps = []
+    index = 1
+    for time in need_time:
+        steps.append(calculate_param(time[0], time[1]))
+        print(f"Шаг {index}: {time[0]} по {time[1]}")
+        index += 1
+    print(f"\nКонтрагент", end='\t\t')
+    index = 1
+    while index < len(need_time) + 1:
+        print(f"Шаг {index}", end='\t\t\t')
+        index += 1
     print()
+    return steps
 
-print(f"Убыточные стратегии в течении 5 секунд: {count_negative_5}")
-print(f"Прибыльные стратегии в течении 5 секунд: {count_positive_5}")
-print(f"Убыточные стратегии в течении 8 часов: {count_negative_18}")
-print(f"Прибыльные стратегии в течении 8 часов: {count_positive_18}")
 
-# # Отображение убыток/профита/Итогов
-# if len(f"{contractors[contractor][strategy][0]}") < 8:
-#     print(f"{contractors[contractor][strategy][0]}", end='\t\t')
-# else:
-#     print(f"{contractors[contractor][strategy][0]}", end='\t')
+if __name__ == '__main__':
+    dict_for_print = get_struct_data(
+        ("10:00:00.000", "10:00:05.000"),
+        ("10:00:05.000", "10:00:30.000"),
+        ("10:00:30.000", "18:45:00.000"),
+    )
+
+    for strategy in dict_for_print:
+        print(f"{strategy}")
+        for contr in dict_for_print[strategy]:
+
+            step_1 = dict_for_print[strategy][contr][0]
+            print(f"-> {contr}\t{dict_for_print[strategy][contr][0]['step_1']}")
+
+    print("\n__________________________________________________\n")
+    get_struct_data(("10:00:00.000", "18:45:10.000"), ("19:00:00.000", "23:50:00.000"))
+
+
 #
-# if len(f"{contractors[contractor][strategy][1]}") < 8:
-#     print(f"{contractors[contractor][strategy][1]}", end='\t\t')
-# else:
-#     print(f"{contractors[contractor][strategy][1]}", end='\t')
+#     # Количество стратегий которые сначала торгуют в убыток/прибыль, а затем в прибыль/убыток
+#     if step_1 < 0 and 0 < step_2:
+#         count_pre_loss += 1
+#
+#     if step_1 < 0:
+#         count_negative_5 += 1
+#     else:
+#         count_positive_5 += 1
+#
+#     if step_2 < 0:
+#         count_negative_18 += 1
+#     else:
+#         count_positive_18 += 1
+#
+#     if len(f"{step_1}") == 16:
+#         print(f"{step_1}", end='\t')
+#     elif len(f"{step_1}") < 8:
+#         print(f"{step_1}", end='\t\t\t')
+#     else:
+#         print(f"{step_contr}", end='\t\t')
+#
+# print(f"{step_2}")
+# for contractor in step:
+#     print(f"{contractor}\n", end='')
+#     for strategy in step[contractor]:
+#         step_contr = step[contractor][strategy][1] - step[contractor][strategy][0]
+#         #
+#         # # Отображение контрагентов
+#         # if len(strategy) > 12:
+#         #     print(f"-> {strategy}", end='\t')
+#         # else:
+#         #     print(f"-> {strategy}", end='\t\t')
+#
+#     print()
+
+# print(f"Убыточные стратегии в течении 5 секунд: {count_negative_5}")
+# print(f"Прибыльные стратегии в течении 5 секунд: {count_positive_5}")
+# print(f"Убыточные стратегии в течении 8 часов: {count_negative_18}")
+# print(f"Прибыльные стратегии в течении 8 часов: {count_positive_18}")
+# print(f"Количество стратегий, которые торгуют в минус, а затем в плюс: {count_pre_loss}\n")
+#
+# for time in list_strategy:
+#     print(time)
+
+# count_pre_loss = 0
+# count_negative_5 = 0
+# count_positive_5 = 0
+# count_negative_18 = 0
+# count_positive_18 = 0
