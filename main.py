@@ -19,7 +19,7 @@ def __get_table(need_sort=False, sort_column=None):
                 header = log_action
                 continue
 
-            if log_action[2][:3] in block_contr:
+            if log_action[2][:3] in block_contr:    # log_action[1] == 'QcEu_2010_2'
                 continue
 
             result.append(log_action)
@@ -92,33 +92,53 @@ def calculate_param(start_date, end_date):
         elif parse(end_date) < parse(param["time_open"]):
             return result_contractors
 
-    return result_contractors
 
-
-def get_struct_data(*need_time):
+def get_struct_data(need_time):
     steps = print_header(need_time)
     result_dict = {}
-    index = 1
+    index = 0
 
     for step in steps:
         for contr in step:
             temp_dict = {}
             for strategy in step[contr]:
 
-                temp_dict[strategy] = {
-                        f"step_{index}": step[contr][strategy][1] - step[contr][strategy][0]
+                temp_dict[strategy] = [
+                    {
+                        index: step[contr][strategy][1] - step[contr][strategy][0]
                     }
+                ]
 
             if contr in result_dict:
-                result_dict[contr] += [temp_dict]
+                # Если ключи совпадают, то их нужно объеденить, если нет, то их нужно добавить
+                for temp_contr in temp_dict:
+                    if temp_contr not in result_dict[contr]:
+                        result_dict[contr][temp_contr] = temp_dict[temp_contr]
+                    else:
+                        result_dict[contr][temp_contr] += temp_dict[temp_contr]
             else:
-                result_dict[contr] = [temp_dict]
+                # Если нет контрагента, то нужно добавить его в список
+                result_dict[contr] = temp_dict
         index += 1
 
     return result_dict
 
 
 def print_header(need_time):
+    steps = return_stepts(need_time)
+    print_stepts(need_time)
+    return steps
+
+
+def print_stepts(need_time):
+    index = 1
+    while index < len(need_time) + 1:
+        print(f"Шаг {index}", end='\t\t\t')
+        index += 1
+    print()
+
+
+def return_stepts(need_time):
     steps = []
     index = 1
     for time in need_time:
@@ -126,30 +146,43 @@ def print_header(need_time):
         print(f"Шаг {index}: {time[0]} по {time[1]}")
         index += 1
     print(f"\nКонтрагент", end='\t\t')
-    index = 1
-    while index < len(need_time) + 1:
-        print(f"Шаг {index}", end='\t\t\t')
-        index += 1
-    print()
     return steps
 
 
 if __name__ == '__main__':
-    dict_for_print = get_struct_data(
+    need_data = (
         ("10:00:00.000", "10:00:05.000"),
         ("10:00:05.000", "10:00:30.000"),
         ("10:00:30.000", "18:45:00.000"),
     )
 
+    dict_for_print = get_struct_data(need_data)
+
     for strategy in dict_for_print:
         print(f"{strategy}")
         for contr in dict_for_print[strategy]:
+            if len(contr) > 12:
+                print(f"-> {contr}", end='\t')
+            else:
+                print(f"-> {contr}", end='\t\t')
 
-            step_1 = dict_for_print[strategy][contr][0]
-            print(f"-> {contr}\t{dict_for_print[strategy][contr][0]['step_1']}")
+            column = 0
+            while column < len(need_data):
+                pr = next((x for x in dict_for_print[strategy][contr] if column in x.keys()), None)
+
+                if pr and len(f"{pr[column]}") == 16:
+                    print(pr[column], end='\t')
+                elif pr and len(f"{pr[column]}") < 8:
+                    print(pr[column], end='\t\t\t')
+                elif pr:
+                    print(pr[column], end='\t\t')
+                else:
+                    print(0, end='\t\t\t')
+                column += 1
+            print()
 
     print("\n__________________________________________________\n")
-    get_struct_data(("10:00:00.000", "18:45:10.000"), ("19:00:00.000", "23:50:00.000"))
+    # get_struct_data(("10:00:00.000", "18:45:10.000"), ("19:00:00.000", "23:50:00.000"))
 
 
 #
