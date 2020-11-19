@@ -1,4 +1,3 @@
-import copy
 from decimal import Decimal
 from dateutil.parser import parse
 import csv
@@ -9,13 +8,13 @@ block_contr = [
 ]
 
 
-def __get_table(need_sort=True, sort_column=5):
+def get_table(need_sort=True, sort_column=5):
     with open('./example.csv', newline='') as csvfile:
         result = []
         tasks = csv.reader(csvfile, delimiter=';')
         header = False
-
         for log_action in tasks:
+
             if not header:
                 header = log_action
                 continue
@@ -33,22 +32,19 @@ def __get_table(need_sort=True, sort_column=5):
     return result
 
 
+table = get_table()
+
+
 def calculate_param(start_date, end_date):
     result_contractors = {}
     flag_header = True
 
-    for row in __get_table():
+    for row in table:
         if flag_header:
             flag_header = False
             continue
 
-        param = {
-            "strategy": row[1],
-            "contract": row[2],
-            "time_open": row[5],
-            "time_close": row[6],
-            "custom": row[11]
-        }
+        param = get_param_for_table(row)
 
         if not param["contract"][-1].isdigit():
             continue
@@ -123,11 +119,22 @@ def calculate_param(start_date, end_date):
     return result_contractors
 
 
+def get_param_for_table(row):
+    param = {
+        "strategy": row[1],
+        "contract": row[2],
+        "time_open": row[5],
+        "time_close": row[6],
+        "custom": row[11]
+    }
+    return param
+
+
 def calculate_only_sum(start_date, end_date):
     result_contractors = {}
     flag_header = True
 
-    for row in __get_table():
+    for row in table:
         if flag_header:
             flag_header = False
             continue
@@ -207,16 +214,7 @@ def get_struct_data(need_time):
 
 def print_header(need_time):
     steps = return_stepts(need_time)
-    # print_stepts(need_time)
     return steps
-
-
-# def print_stepts(need_time):
-#     index = 1
-#     while index < len(need_time) + 1:
-#         print(f"Период {index}", f"Количество {index}", end='\t\t', sep='\t\t')
-#         index += 1
-#     print()
 
 
 def return_stepts(need_time):
@@ -226,34 +224,13 @@ def return_stepts(need_time):
         steps.append(calculate_only_sum(time[0], time[1]))
         print(f"Период {index}: {time[0]} по {time[1]}")
         index += 1
-    # print(f"\nКонтрагент", end='\t\t')
     return steps
 
 
-# def get_dict_for_print():
-#     dict_for_print = get_struct_data(need_data)
-#
-#     for strategy in dict_for_print:
-#         print(f"{strategy}")
-#         for contr in dict_for_print[strategy]:
-#             print(f"-> {contr}")
-#
-#             column = 0
-#             while column < len(need_data):
-#                 pr = next((x for x in dict_for_print[strategy][contr] if column in x.keys()), None)
-#                 column += 1
-
-
 if __name__ == '__main__':
-    need_data = (
+    need_time = (
         ("10:00:00.000", "10:00:05.000"),
         ("10:00:05.000", "10:00:30.000"),
         ("10:00:30.000", "18:45:00.000"),
     )
-
-    # need_data = (
-    #     ("10:00:00.000", "18:45:10.000"),
-    #     ("19:00:00.000", "23:50:00.000"),
-    # )
-
-    # get_dict_for_print()
+    # __get_table(need_time, conractor='EuZ0')
