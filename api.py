@@ -19,6 +19,9 @@ def get_table(need_sort=True, sort_column=5):
                 header = log_action
                 continue
 
+            if not log_action[2][-1].isdigit():
+                continue
+
             if log_action[2][:3] in block_contr:
                 continue
 
@@ -27,7 +30,7 @@ def get_table(need_sort=True, sort_column=5):
         if need_sort:
             result.sort(key=lambda x: x[sort_column])
 
-        result.insert(0, header)
+        # result.insert(0, header)
 
     return result
 
@@ -35,19 +38,19 @@ def get_table(need_sort=True, sort_column=5):
 table = get_table()
 
 
+def get_all_contr():
+    temp_set = set()
+    for i in table:
+        temp_set.add(i[2])
+    return temp_set
+
+
 def calculate_param(start_date, end_date):
     result_contractors = {}
-    flag_header = True
 
     for row in table:
-        if flag_header:
-            flag_header = False
-            continue
 
         param = get_param_for_table(row)
-
-        if not param["contract"][-1].isdigit():
-            continue
 
         if parse(start_date) <= parse(param["time_open"]) <= parse(end_date):
             # Заведение контракта, если он до этого не встречался
@@ -132,12 +135,8 @@ def get_param_for_table(row):
 
 def calculate_only_sum(start_date, end_date):
     result_contractors = {}
-    flag_header = True
 
     for row in table:
-        if flag_header:
-            flag_header = False
-            continue
 
         param = {
             "strategy": row[1],
@@ -181,7 +180,7 @@ def calculate_only_sum(start_date, end_date):
 
 
 def get_struct_data(need_time):
-    steps = print_header(need_time)
+    steps = return_stepts(need_time)
     result_dict = {}
     index = 0
 
@@ -212,11 +211,6 @@ def get_struct_data(need_time):
     return result_dict
 
 
-def print_header(need_time):
-    steps = return_stepts(need_time)
-    return steps
-
-
 def return_stepts(need_time):
     steps = []
     index = 1
@@ -228,9 +222,10 @@ def return_stepts(need_time):
 
 
 if __name__ == '__main__':
-    need_time = (
-        ("10:00:00.000", "10:00:05.000"),
-        ("10:00:05.000", "10:00:30.000"),
-        ("10:00:30.000", "18:45:00.000"),
-    )
-    # __get_table(need_time, conractor='EuZ0')
+    # need_time = (
+    #     ("10:00:00.000", "10:00:05.000"),
+    #     ("10:00:05.000", "10:00:30.000"),
+    #     ("10:00:30.000", "18:45:00.000"),
+    # )
+    # get_table()
+    print(get_all_contr())
