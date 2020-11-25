@@ -9,7 +9,7 @@ block_contr = [
 
 
 def get_table(need_sort=True, sort_column=5):
-    with open('./example.csv', newline='') as csvfile:
+    with open('./tabs/giga_futures.csv', newline='') as csvfile:
         result = []
         tasks = csv.reader(csvfile, delimiter=';')
         header = False
@@ -19,8 +19,9 @@ def get_table(need_sort=True, sort_column=5):
                 header = log_action
                 continue
 
-            if not log_action[2][-1].isdigit():
-                continue
+            # Проверка на фьючерсы
+            # if not log_action[2][-1].isdigit():
+            #     continue
 
             if log_action[2][:3] in block_contr:
                 continue
@@ -146,9 +147,6 @@ def calculate_only_sum(start_date, end_date):
             "custom": row[11]
         }
 
-        if not param["contract"][-1].isdigit():
-            continue
-
         if parse(start_date) <= parse(param["time_open"]) <= parse(end_date):
             # Заведение контракта, если он до этого не встречался
             if not param["contract"] in result_contractors:
@@ -221,11 +219,36 @@ def return_stepts(need_time):
     return steps
 
 
+def get_all_strategy():
+    temp_set = set()
+    for i in table:
+        temp_set.add(i[1])
+    return temp_set
+
+
 if __name__ == '__main__':
-    # need_time = (
-    #     ("10:00:00.000", "10:00:05.000"),
-    #     ("10:00:05.000", "10:00:30.000"),
-    #     ("10:00:30.000", "18:45:00.000"),
-    # )
+    need_time = (
+        ("10:00:00.000", "10:00:05.000"),
+        ("10:00:05.000", "10:00:30.000"),
+        ("10:00:30.000", "10:03:00.000"),
+        ("10:03:30.000", "10:30:00.000"),
+        ("10:30:30.000", "11:00:00.000"),
+        ("11:00:00.000", "12:00:00.000"),
+        ("12:00:00.000", "12:30:00.000"),
+        ("12:30:00.000", "13:30:00.000"),
+        ("13:30:00.000", "14:00:00.000"),
+        ("14:00:00.000", "14:30:00.000"),
+        ("14:30:00.000", "15:00:00.000"),
+        ("15:00:00.000", "15:30:00.000"),
+        ("15:30:00.000", "16:00:00.000"),
+        ("16:00:00.000", "16:30:00.000"),
+        ("16:30:00.000", "17:00:00.000"),
+        ("17:00:00.000", "17:30:00.000"),
+        ("17:30:00.000", "18:00:00.000"),
+        ("18:00:00.000", "18:30:00.000"),
+        ("18:30:00.000", "18:45:00.000"),
+    )
     # get_table()
-    print(get_all_contr())
+    # print(get_all_contr())
+    # print(get_all_strategy())
+    get_struct_data(need_time)
