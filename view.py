@@ -6,28 +6,45 @@ import matplotlib.pyplot as plt
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
 
-
 need_time = (
-    ("10:00:00.000", "10:00:05.000"),
-    ("10:00:05.000", "10:00:30.000"),
-    ("10:00:30.000", "10:03:00.000"),
-    ("10:03:30.000", "10:30:00.000"),
-    ("10:30:30.000", "11:00:00.000"),
-    ("11:00:00.000", "12:00:00.000"),
-    ("12:00:00.000", "12:30:00.000"),
-    ("12:30:00.000", "13:30:00.000"),
-    ("13:30:00.000", "14:00:00.000"),
-    ("14:00:00.000", "14:30:00.000"),
-    ("14:30:00.000", "15:00:00.000"),
-    ("15:00:00.000", "15:30:00.000"),
-    ("15:30:00.000", "16:00:00.000"),
-    ("16:00:00.000", "16:30:00.000"),
-    ("16:30:00.000", "17:00:00.000"),
-    ("17:00:00.000", "17:30:00.000"),
-    ("17:30:00.000", "18:00:00.000"),
-    ("18:00:00.000", "18:30:00.000"),
-    ("18:30:00.000", "18:45:00.000"),
+    ("10:00:00.000", "10:00:02.000"),
+    ("10:00:02.000", "10:00:04.000"),
+    ("10:00:04.000", "10:00:06.000"),
+    ("10:00:06.000", "10:00:08.000"),
+    ("10:00:08.000", "10:00:10.000"),
+    ("10:00:10.000", "10:00:12.000"),
+    ("10:00:12.000", "10:00:14.000"),
+    ("10:00:14.000", "10:00:16.000"),
+    ("10:00:16.000", "10:00:18.000"),
+    ("10:00:18.000", "10:00:20.000"),
+    ("10:00:20.000", "10:00:22.000"),
+    ("10:00:22.000", "10:00:24.000"),
+    ("10:00:24.000", "10:00:26.000"),
+    ("10:00:26.000", "10:00:28.000"),
+    ("10:00:28.000", "10:00:30.000"),
 )
+
+# need_time = (
+#     ("10:00:00.000", "10:00:05.000"),
+#     ("10:00:05.000", "10:00:30.000"),
+#     ("10:00:30.000", "10:03:00.000"),
+#     ("10:03:30.000", "10:30:00.000"),
+#     ("10:30:30.000", "11:00:00.000"),
+#     ("11:00:00.000", "12:00:00.000"),
+#     ("12:00:00.000", "12:30:00.000"),
+#     ("12:30:00.000", "13:30:00.000"),
+#     ("13:30:00.000", "14:00:00.000"),
+#     ("14:00:00.000", "14:30:00.000"),
+#     ("14:30:00.000", "15:00:00.000"),
+#     ("15:00:00.000", "15:30:00.000"),
+#     ("15:30:00.000", "16:00:00.000"),
+#     ("16:00:00.000", "16:30:00.000"),
+#     ("16:30:00.000", "17:00:00.000"),
+#     ("17:00:00.000", "17:30:00.000"),
+#     ("17:30:00.000", "18:00:00.000"),
+#     ("18:00:00.000", "18:30:00.000"),
+#     ("18:30:00.000", "18:45:00.000"),
+# )
 #
 # need_time = (
 #     ("10:00:00.000", "11:00:00.000"),
@@ -118,7 +135,7 @@ def print_all_table():
     print(table)
 
 
-def get_data__for_show_graph_only_strategy(choice_strategy, choice_contractor=None):
+def get_data_for_show_graph_only_strategy(choice_strategy, choice_contractor=None):
     temp_list = []
     for contr in dict_for_print:
         if choice_contractor and choice_contractor != contr:
@@ -141,21 +158,20 @@ def get_data__for_show_graph_only_strategy(choice_strategy, choice_contractor=No
 
         index += 1
 
-    index = 0
-
     if not temp_list:
         print(None)
         return
 
-    while len(need_time) > index:
-        temp_list[index]['Период'] = need_time[index][0]
+    index = 0
+    while index < len(temp_list):
+        temp_list[index]['Период'] = need_time[index % len(need_time)][0]
         index += 1
 
     return temp_list
 
 
 def print_choice_strategy(choice_strategy, choice_contractor=None):
-    data = get_data__for_show_graph_only_strategy(
+    data = get_data_for_show_graph_only_strategy(
         choice_strategy=choice_strategy,
         choice_contractor=choice_contractor,
     )
@@ -163,8 +179,8 @@ def print_choice_strategy(choice_strategy, choice_contractor=None):
     if not data:
         return
 
-    df = pd.DataFrame(data)
-
+    df = pd.DataFrame(data).groupby(by='Период').sum()
+    # print(df)
     if choice_contractor:
         title = f"{choice_contractor} | {choice_strategy}"
     else:
@@ -178,11 +194,12 @@ def print_choice_strategy(choice_strategy, choice_contractor=None):
             temp_list.append(i)
 
     df['sum'] = pd.Series(temp_list, index=df.index)
+    # print(df)
 
     df.plot(
         kind='bar',
         y=['sum', "count"],
-        x='Период',
+        # x='Период',
         secondary_y='count',
         color={"sum": (df['val'] > 0).map({True: 'g', False: 'r'}), "count": "b"},
         rot=0,
@@ -202,7 +219,7 @@ def print_graph_contractor(choice_contractor):
 
         for i in dict_for_print[contr]:
             index = 0
-            while index < len(need_ti/home/pirate/Downloads/me):
+            while index < len(need_time):
                 pr = next((x for x in dict_for_print[contr][i] if index in x.keys()), {
                     index: 0,
                     'sum': 0,
